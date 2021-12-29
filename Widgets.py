@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QLineEdit, QLabel, QGridLayout, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QLineEdit, QLabel, QGridLayout, QVBoxLayout, QFrame
 from PyQt5.QtCore import Qt, QEvent, QPoint
 from PyQt5.QtGui import QPixmap, QIcon
 import playsound
@@ -133,12 +133,15 @@ class EditableLabel(QLabel):
         self._editor.hide()
 
 
-class MainFrame(DraggableWidget):
+class MainFrame(QFrame, DraggableWidget):
     def __init__(self, view):
         super().__init__()
         self._view = view
         self._vbox = QVBoxLayout()
         self.initUI()
+
+    def setPosition(self, pos):
+        self.move(pos)
 
     def initUI(self):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -172,7 +175,7 @@ class MinimizedFrame(DraggableWidget):
         self.resize(50, 50)
 
         self._mainWindow.setObjectName('mainFrame')
-        self._mainWindow.setStyleSheet('QWidget#mainFrame{ background-color: white; border: 1px solid black; }')
+        self._mainWindow.setStyleSheet('#mainFrame{ background-color: white; border: 1px solid black; }')
 
         bg = QLabel(self)
         bg.setPixmap(self._icon)
