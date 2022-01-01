@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QLineEdit, QLabel, QGridLayout, QVBoxLayout, QFrame
+from PyQt5.QtWidgets import QApplication, QWidget, QLineEdit, QLabel, QGridLayout, QVBoxLayout, QFrame
 from PyQt5.QtCore import Qt, QEvent, QPoint
 from PyQt5.QtGui import QPixmap, QIcon
 import playsound
@@ -14,6 +14,7 @@ class DraggableWidget(QWidget):
         self._oldPos = pos
 
     def mousePressEvent(self, event):
+        self.setFocus()
         self._oldPos = event.globalPos()
 
     def mouseMoveEvent(self, event):
@@ -21,14 +22,82 @@ class DraggableWidget(QWidget):
         self.move(self.x() + delta.x(), self.y() + delta.y())
         self._oldPos = event.globalPos()
 
+class EditableLabel(QLineEdit):
+    def __init__(self, parent):
+        super().__init__()
+        self.setFixedHeight(20)
+        self.editingFinished.connect(self.handleEditingFinished)
+        self._init = True
+        self._checked = False
+        self._editing = False
+        self._parent = parent
+
+    def showEvent(self, event):
+        if self._init:
+            self.edit()
+            self._init = False
+
+    def mouseDoubleClickEvent(self, event):
+        self.edit()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.RightButton:
+            self._parent.remove()
+    
+    def focusInEvent(self, event):
+        if not self._editing:
+            self.deselect()
+
+    def focusOutEvent(self, event):
+        if self._editing:
+            self.handleEditingFinished()
+
+    def edit(self):
+        self._editing = True
+        self.updateStyleSheet()
+        self.setFocus(True)
+        self.selectAll()
+        self.setReadOnly(False)
+
+    def handleEditingFinished(self):
+        self._editing = False
+        self.setFocus(False)
+        self.deselect()
+        self.setReadOnly(True)
+        self.updateStyleSheet()
+        self._parent.rename(self.text())
+
+    def check(self):
+        self._checked = True
+        self.updateStyleSheet()
+
+    def uncheck(self):
+        self._checked = False
+        self.updateStyleSheet()
+
+    def updateStyleSheet(self):
+        styleSheet = ''
+        if self._checked:
+            styleSheet += 'text-decoration: line-through;'
+        else:
+            styleSheet += 'text-decoration: none;'
+        if self._editing:
+            styleSheet += 'border: 1px solid black;'
+        else:
+            styleSheet += 'border: none;'
+        self.setStyleSheet(styleSheet)
+
 
 class PlanWidget(QGridLayout):
-    def __init__(self, view, plan):
+    def __init__(self, view, plan, parent):
         super().__init__()
         self._view = view
         self._data = plan
-        self._title = EditableLabel(self, self._data.title)
+        self._parent = parent
+        self._title = EditableLabel(self)
         self._checkBox = ImageCheckbox(self, 'resources/checked.png', 'resources/unchecked.png')
+
+        self._title.setText(plan.title)
         self.addWidget(self._checkBox, 0, 0, 1, 2)
         self.addWidget(self._title, 0, 1, 1, 8)
 
@@ -49,18 +118,18 @@ class PlanWidget(QGridLayout):
 
     def rename(self, title):
         self._view.renamePlan(self._data, title)
-        self._title.rename(title)
 
     def remove(self):
         self._title.deleteLater()
         self._checkBox.deleteLater()
         self.deleteLater()
+        self._parent.removePlanWidget(self)
 
 
 class ImageCheckbox(QLabel):
     def __init__(self, parent, checked, unchecked):
         super().__init__()
-        self.setFixedHeight(15)
+        self.setFixedHeight(20)
         self._parent = parent
         self._checkedImage = QPixmap(checked)
         self._uncheckedImage = QPixmap(unchecked)
@@ -76,72 +145,12 @@ class ImageCheckbox(QLabel):
         self._parent.changePlanState()
 
 
-class EditableLabel(QLabel):
-    def __init__(self, parent, title):
-        super().__init__(title)
-        self.setMaximumWidth(350)
-        self._parent = parent
-        self._initPositionSetting = 0
-
-        self._editor = QLineEdit(self)
-        self._editor.setWindowFlags(Qt.Popup)
-        self._editor.setFocusProxy(self)
-        self._editor.editingFinished.connect(self.handleEditingFinished)
-        self._editor.installEventFilter(self)
-        self.editTitle()
-
-    def editTitle(self):
-        self._editor.setText(self.text())
-        self._editor.move(self.mapToGlobal(self.rect().topLeft()))
-        if not self._editor.isVisible():
-            self._editor.show()
-            self._editor.selectAll()
-
-    def check(self):
-        self.setStyleSheet('text-decoration: line-through;')
-
-    def uncheck(self):
-        self.setStyleSheet('text-decoration: none;')
-
-    def rename(self, title):
-        self.setText(title)
-
-    def setEditorPosition(self):
-        self._editor.move(self.mapToGlobal(self.rect().topLeft()))
-
-    def eventFilter(self, widget, event):
-        if event.type() == QEvent.MouseButtonPress and not self._editor.geometry().contains(event.globalPos()):
-            self._editor.hide()
-            self.handleEditingFinished()
-            return True
-        # 아마도... 비동기적 처리 과정이 있는 것 같다.
-        # 위젯 생성 -> 그리드 레이아웃 -> VBox 레이아웃 순으로 배치한 뒤, Global Position을 가져올 수 있으면 좋을 것 같은데...
-        if self._initPositionSetting < 16:
-            self._editor.move(self.mapToGlobal(self.rect().topLeft()))
-            self._initPositionSetting += 1
-        return super().eventFilter(widget, event)
-
-    def mouseDoubleClickEvent(self, event):
-        self.editTitle()
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MouseButton.RightButton:
-            self._parent.remove()
-
-    def handleEditingFinished(self):
-        self._parent.rename(self._editor.text())
-        self._editor.hide()
-
-
 class MainFrame(QFrame, DraggableWidget):
     def __init__(self, view):
         super().__init__()
         self._view = view
         self._vbox = QVBoxLayout()
         self.initUI()
-
-    def setPosition(self, pos):
-        self.move(pos)
 
     def initUI(self):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -156,8 +165,14 @@ class MainFrame(QFrame, DraggableWidget):
             self.hide()
 
     def addPlanWidget(self, plan):
-        self._vbox.addLayout(PlanWidget(self._view, plan))
-        self.setLayout(self._vbox)
+        self._vbox.addLayout(PlanWidget(self._view, plan, self))
+    
+    def removePlanWidget(self, planWidget):
+        self._vbox.removeItem(planWidget)
+        self.resize(320, 240)
+
+    def setPosition(self, pos):
+        self.move(pos)
 
 
 class MinimizedFrame(DraggableWidget):
