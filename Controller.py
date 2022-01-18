@@ -1,5 +1,6 @@
 from DataTypes import Plan, Setting
-import time
+import datetime
+import os
 
 
 class Controller:
@@ -9,10 +10,12 @@ class Controller:
         self._view.setController(self)
 
     def initController(self):
-        self._model.setDate(time.time())
+        self._model.setDate(datetime.datetime.now())
         self.setWindowPosition()
 
     def loadWindowPosition(self):
+        if not os.path.exists('config.ini'):
+            return Setting(0, 0, 0, 0)
         configFile = open('config.ini', 'r').readlines()
         minimizedWindowPosX = 0
         minimizedWindowPosY = 0
@@ -30,6 +33,16 @@ class Controller:
             elif 'MainWindowPosY' in line:
                 mainWindowPosY = int(value)
         return Setting(minimizedWindowPosX, minimizedWindowPosY, mainWindowPosX, mainWindowPosY)
+    
+    def loadPlanData(self, fileName):
+        with open(fileName, 'r') as loadedFile:
+            data = loadedFile.readlines()
+            for line in data[1:]:
+                if line.startswith('[*]'):
+                    checked = True
+                else:
+                    checked = False
+                self.addPlan(line[line.index(']') + 1:].replace('\n', ''), checked=checked, initEditable=False)
 
     def saveWindowPosition(self):
         with open('config.ini', 'w') as configFile:
@@ -44,14 +57,19 @@ class Controller:
             configFile.write('\nMainWindowPosY=')
             configFile.write(str(mainWindowPos.y()))
 
+    def savePlanData(self):
+        with open(self._model.getDate().strftime("%Y-%m-%d") + '.pln', 'w') as savedFile:
+            savedFile.write(self.makePlanDataToStr())
+
     def setWindowPosition(self):
         self._model.setSettingData(self.loadWindowPosition())
         self._view.setMinimizedWindowPosition(self._model.getSettingData().minimizedWindowPos)
         self._view.setMainWindowPosition(self._model.getSettingData().mainWindowPos)
 
-    def addPlan(self, title):
+    def addPlan(self, title, checked=False, initEditable=True):
         plan = Plan(title)
-        self._view.addPlanWidget(plan)
+        plan.checked = checked
+        self._view.addPlanWidget(plan, initEditable)
         self._model.addPlan(plan)
 
     def renamePlan(self, plan, title):
@@ -63,16 +81,17 @@ class Controller:
 
     def removePlan(self, plan):
         self._model.removePlan(plan)
-        self.printPlans()
 
-    def printPlans(self):
-        print(self._model.getDate())
+    def makePlanDataToStr(self):
+        result = self._model.getDate().strftime("%Y-%m-%d")
         for plan in self._model.getPlanData():
+            result += '\n'
             if plan.checked:
-                print('[*]', end=' ')
+                result += '[*]'
             else:
-                print('[ ]', end=' ')
-            print(plan.title)
+                result += '[ ]'
+            result += plan.title
+        return result
 
     def close(self):
         self.saveWindowPosition()

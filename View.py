@@ -28,14 +28,20 @@ class View:
     def renamePlan(self, plan, title):
         self._controller.renamePlan(plan, title)
 
+    def getFittedWidth(self, text):
+        self._controller.getFittedWidth(text)
+
     def changePlanState(self, plan):
         return self._controller.changePlanState(plan)
 
     def removePlan(self, plan):
         self._controller.removePlan(plan)
 
-    def addPlanWidget(self, plan):
-        self._window.addPlanWidget(plan)
+    def addPlanWidget(self, plan, initEditable=True):
+        self._window.addPlanWidget(plan, initEditable=initEditable)
+
+    def savePlanData(self):
+        self._controller.savePlanData()
 
     def close(self):
         self._window.close()

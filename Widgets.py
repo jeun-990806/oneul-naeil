@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QLineEdit, QLabel, QGridLayout, QVBoxLayout, QFrame
-from PyQt5.QtCore import Qt, QEvent, QPoint
+from PyQt5.QtWidgets import QWidget, QLineEdit, QLabel, QMenu, QGridLayout, QVBoxLayout, QFrame
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPixmap, QIcon
 import playsound
 
@@ -23,11 +23,11 @@ class DraggableWidget(QWidget):
         self._oldPos = event.globalPos()
 
 class EditableLabel(QLineEdit):
-    def __init__(self, parent):
+    def __init__(self, parent, initEditable):
         super().__init__()
         self.setFixedHeight(20)
         self.editingFinished.connect(self.handleEditingFinished)
-        self._init = True
+        self._init = initEditable
         self._checked = False
         self._editing = False
         self._parent = parent
@@ -36,6 +36,8 @@ class EditableLabel(QLineEdit):
         if self._init:
             self.edit()
             self._init = False
+        else:
+            self.handleEditingFinished()
 
     def mouseDoubleClickEvent(self, event):
         self.edit()
@@ -89,15 +91,17 @@ class EditableLabel(QLineEdit):
 
 
 class PlanWidget(QGridLayout):
-    def __init__(self, view, plan, parent):
+    def __init__(self, view, plan, parent, initEditable=True):
         super().__init__()
         self._view = view
         self._data = plan
         self._parent = parent
-        self._title = EditableLabel(self)
+        self._title = EditableLabel(self, initEditable)
         self._checkBox = ImageCheckbox(self, 'resources/checked.png', 'resources/unchecked.png')
 
         self._title.setText(plan.title)
+        if self._data.checked:
+            self.check()
         self.addWidget(self._checkBox, 0, 0, 1, 2)
         self.addWidget(self._title, 0, 1, 1, 8)
 
@@ -123,7 +127,7 @@ class PlanWidget(QGridLayout):
         self._title.deleteLater()
         self._checkBox.deleteLater()
         self.deleteLater()
-        self._parent.removePlanWidget(self)
+        self._parent.removePlanWidget(self._data)
 
 
 class ImageCheckbox(QLabel):
@@ -153,8 +157,8 @@ class MainFrame(QFrame, DraggableWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.resize(320, 240)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        self.resize(400, 240)
         self._vbox.setSpacing(20)
         self.setLayout(self._vbox)
 
@@ -164,12 +168,12 @@ class MainFrame(QFrame, DraggableWidget):
         elif e.key() == Qt.Key_Q:
             self.hide()
 
-    def addPlanWidget(self, plan):
-        self._vbox.addLayout(PlanWidget(self._view, plan, self))
+    def addPlanWidget(self, plan, initEditable=True):
+        self._vbox.addLayout(PlanWidget(self._view, plan, self, initEditable=initEditable))
     
-    def removePlanWidget(self, planWidget):
-        self._vbox.removeItem(planWidget)
-        self.resize(320, 240)
+    def removePlanWidget(self, plan):
+        self._view.removePlan(plan)
+        self.resize(400, 240)
 
     def setPosition(self, pos):
         self.move(pos)
@@ -181,6 +185,10 @@ class MinimizedFrame(DraggableWidget):
         self._view = view
         self._mainWindow = mainWindow
         self._icon = QPixmap('resources/icon.png')
+        self._contextMenu = QMenu(self)
+        self._saveNotionAction = None
+        self._saveLocalAction = None
+        self._quitAction = None
         self.initUI()
 
     def initUI(self):
@@ -195,6 +203,10 @@ class MinimizedFrame(DraggableWidget):
         bg = QLabel(self)
         bg.setPixmap(self._icon)
 
+        self._saveLocalAction = self._contextMenu.addAction("Save to local")
+        self._saveNotionAction = self._contextMenu.addAction("Save to Notion")
+        self._quitAction = self._contextMenu.addAction("Quit")
+
         self.show()
 
     def mouseDoubleClickEvent(self, event):
@@ -203,7 +215,11 @@ class MinimizedFrame(DraggableWidget):
         else:
             self._mainWindow.show()
 
-    def mousePressEvent(self, event):
-        super().mousePressEvent(event)
-        if event.button() == Qt.MouseButton.RightButton:
+    def contextMenuEvent(self, event):
+        action = self._contextMenu.exec_(event.globalPos())
+        if action == self._saveLocalAction:
+            self._view.savePlanData()
+        elif action == self._saveNotionAction:
+            print("save plan data to notion")
+        elif action == self._quitAction:
             self._view.close()

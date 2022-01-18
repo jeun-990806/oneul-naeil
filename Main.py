@@ -11,5 +11,7 @@ model = Model()
 view = View()
 controller = Controller(model, view)
 controller.initController()
+if len(sys.argv) == 2:
+    controller.loadPlanData(sys.argv[1])
 
 sys.exit(app.exec_())
