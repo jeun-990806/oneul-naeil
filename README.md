@@ -9,6 +9,9 @@
  
 ## 3. 상세
  [개발자 블로그](https://jeun-990806.github.io/project_oneulnaeil.html)에서 확인할 수 있습니다.
+ 
+## 4. 기여하기
+ 본 애플리케이션은 PyQt 라이브러리를 이용하여 개발되었으며, GPL을 따르고 있습니다.
 
-## 4. 기타
+## 5. 기타
  * 연락처: kjeun990806@gmail.com
