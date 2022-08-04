@@ -9,9 +9,9 @@ class ImageCheckbox(QPushButton):
         self._uncheckedImage = unchecked
         self.status = initStatus
         if self.status:
-            self.check()
+            self.setStyleSheet('border: none; background-image: url(' + self._checkedImage + '); background-repeat: no-repeat; background-position: 0 0;')
         else:
-            self.uncheck()
+            self.setStyleSheet('border: none; background-image: url(' + self._uncheckedImage + '); background-repeat: no-repeat; background-position: 0 0;')
 
     def toggle(self):
         self.status = not self.status
@@ -26,7 +26,7 @@ class ImageCheckbox(QPushButton):
 
     def check(self):
         self.setStyleSheet('border: none; background-image: url(' + self._checkedImage + '); background-repeat: no-repeat; background-position: 0 0;')
-        playsound.playsound('resources/check.wav', block=False)
+        playsound.playsound('assets/audio/check.wav', block=False)
 
     def uncheck(self):
         self.setStyleSheet('border: none; background-image: url(' + self._uncheckedImage + '); background-repeat: no-repeat; background-position: 0 0;')

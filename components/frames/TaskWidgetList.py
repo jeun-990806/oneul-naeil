@@ -9,7 +9,7 @@ class TaskWidgetList(QFrame):
     def __init__(self, parent=None, controller=None, category=''):
         super().__init__(parent)
         self.setFrameShape(QFrame.Box)
-        self.setLineWidth(1)
+        self.setLineWidth(0)
 
         self._controller = controller
 
@@ -24,24 +24,19 @@ class TaskWidgetList(QFrame):
         self._layout = QVBoxLayout(self)
         self._layout.addLayout(categoryTitle)
         self._layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self._loadPlans()
+        self._loadTasks()
 
-    def _loadPlans(self):
-        try:
-            planDataList = [
-                {'title': 'abcd', 'status': False}
-                ] #self._controller.getPlanData()
-            for planData in planDataList:
-                self.addPlanWidget(planData)
-        except:
-            print("There is no proper controller.")
+    def _loadTasks(self):
+        TaskDataList = [
+            {'title': 'test01', 'status': False},
+            {'title': 'test02', 'status': True}
+            ]
+        for TaskData in TaskDataList:
+            self.addTaskWidget(TaskData)
     
-    def addPlanWidget(self, planData):
-        try:
-            planWidget = self._createPlanWidget(planData)
-            self._layout.addLayout(planWidget)
-        except:
-            print("Cannot make a planwidget from this data: ", planData)
+    def addTaskWidget(self, TaskData):
+        TaskWidget = self._createTaskWidget(TaskData)
+        self._layout.addLayout(TaskWidget)
 
-    def _createPlanWidget(self, planData):
-        return TaskWidget(title=planData['title'], status=planData['status'])
+    def _createTaskWidget(self, TaskData):
+        return TaskWidget(title=TaskData['title'], status=TaskData['status'])

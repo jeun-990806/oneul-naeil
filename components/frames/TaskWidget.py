@@ -20,7 +20,7 @@ class TaskWidget(QGridLayout):
         self.setHorizontalSpacing(10)
     
     def _setWidgets(self):
-        self._checkbox = ImageCheckbox(self, 'resources/checked.png', 'resources/unchecked.png')
+        self._checkbox = ImageCheckbox('assets/images/checked.png', 'assets/images/unchecked.png', self._status)
         self._checkbox.setFixedWidth(30)
         self._checkbox.setFixedHeight(15)
         self._checkbox.toggled.connect(self._changePlanStatus)
@@ -30,21 +30,25 @@ class TaskWidget(QGridLayout):
         testfont = QFont('돋움', 7)
         metadata.setFont(testfont)
         
-        self.editableLabel = EditableLabel(self, False)
+        self.editableLabel = EditableLabel(False)
+        if self._status is True:
+            self.editableLabel.updateStyleSheet({'text-decoration': 'line-through'})
+        else:
+            self.editableLabel.updateStyleSheet({'text-decoration': 'none'})
         self.editableLabel.setText(self._title)
         self.editableLabel.editingFinished.connect(self._changePlanTitle)
         
         newLayout = QGridLayout()
         metadataLayout = QHBoxLayout()
         metadataLayout.addWidget(metadata)
-        metadataLayout.addWidget(IconButton('resources/time_limit.png', None, None, 9, 9))
+        metadataLayout.addWidget(IconButton(image='assets/images/time_limit.png', width=9, height=9))
         metadataLayout.addStretch(1)
         newLayout.addLayout(metadataLayout, 0, 0, Qt.AlignmentFlag.AlignLeft)
         newLayout.addWidget(self.editableLabel, 1, 0)
 
         self.addWidget(self._checkbox, 0, 0)
         self.addLayout(newLayout, 0, 1)
-        self.addWidget(IconButton('resources/delete.png', width=25, height=25), 0, 2)
+        self.addWidget(IconButton('assets/images/delete.png', width=25, height=25), 0, 2)
 
     def _changePlanStatus(self):
         self._status = not self._status

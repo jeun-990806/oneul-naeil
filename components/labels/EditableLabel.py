@@ -19,6 +19,8 @@ class EditableLabel(QLineEdit):
         else:
             self.handleEditingFinished()
 
+        print(self, self._style)
+
     def mouseDoubleClickEvent(self, event):
         self.edit()
     
@@ -46,7 +48,8 @@ class EditableLabel(QLineEdit):
 
     def updateStyleSheet(self, newStyleDict):
         self._style.update(newStyleDict)
+        
         styleSheet = ''
         for property, value in self._style.items():
-            styleSheet += property + ': ' + value + ';'
+            styleSheet += property + ': ' + value + '; '
         self.setStyleSheet(styleSheet)
