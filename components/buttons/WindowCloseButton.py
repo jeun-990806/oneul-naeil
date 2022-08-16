@@ -6,7 +6,7 @@ class WindowCloseButton(IconButton):
         super().__init__(image=image, width=width, height=height)
         self._target = target
 
-    def mousePressEvent(self, event):
+    def mouseReleaseEvent(self, event):
         self._target.close()
 
     def setTarget(self, target:QWidget):

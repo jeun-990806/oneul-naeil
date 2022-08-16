@@ -19,8 +19,6 @@ class EditableLabel(QLineEdit):
         else:
             self.handleEditingFinished()
 
-        print(self, self._style)
-
     def mouseDoubleClickEvent(self, event):
         self.edit()
     

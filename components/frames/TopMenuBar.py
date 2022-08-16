@@ -2,9 +2,12 @@ from PyQt5.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QWidget
 from PyQt5.QtCore import Qt
 
 from components.buttons.WindowCloseButton import WindowCloseButton
+from components.buttons.WindowDragButton import WindowDragButton
+
+from components.buttons.SettingButton import SettingButton
 from components.buttons.LoadButton import LoadButton
 from components.buttons.SaveButton import SaveButton
-from components.buttons.WindowDragButton import WindowDragButton
+
 
 class TopMenuBar(QFrame):
     def __init__(self, height=30):
@@ -29,7 +32,7 @@ class TopMenuBar(QFrame):
 
     def _initLeftSide(self) -> QHBoxLayout:
         self._leftSideWidgets = [
-            WindowCloseButton(),
+            WindowDragButton(),
             SaveButton(),
             LoadButton()
         ]
@@ -42,7 +45,8 @@ class TopMenuBar(QFrame):
 
     def _initRightSide(self) -> QHBoxLayout:
         self._rightSideWidgets = [
-            WindowDragButton()
+            SettingButton(),
+            WindowCloseButton()
         ]
         rightSideBox = QHBoxLayout()
         
