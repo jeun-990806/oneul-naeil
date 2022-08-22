@@ -11,8 +11,7 @@ from Controllers import DataController
 class TaskWidget(QGridLayout):
     def __init__(self, taskJson):
         super().__init__()
-        self._title = taskJson['title']
-        self._status = taskJson['status']
+        self._task = taskJson
         self._tasklist = DataController().getTasklist(taskJson['id'])
         self._setStyle()
         self._setWidgets()
@@ -23,7 +22,7 @@ class TaskWidget(QGridLayout):
         self.setHorizontalSpacing(10)
     
     def _setWidgets(self):
-        self._checkbox = ImageCheckbox('assets/images/checked.png', 'assets/images/unchecked.png', self._status)
+        self._checkbox = ImageCheckbox('assets/images/checked.png', 'assets/images/unchecked.png', self._task['status'])
         self._checkbox.setFixedWidth(30)
         self._checkbox.setFixedHeight(15)
         self._checkbox.toggled.connect(self._changePlanStatus)
@@ -34,17 +33,18 @@ class TaskWidget(QGridLayout):
         metadata.setFont(testfont)
         
         self.editableLabel = EditableLabel(False)
-        if self._status is 'completed':
+        if self._task['status'] is 'completed':
             self.editableLabel.updateStyleSheet({'text-decoration': 'line-through'})
         else:
             self.editableLabel.updateStyleSheet({'text-decoration': 'none'})
-        self.editableLabel.setText(self._title)
+        self.editableLabel.setText(self._task['title'])
         self.editableLabel.editingFinished.connect(self._changePlanTitle)
         
         newLayout = QGridLayout()
         metadataLayout = QHBoxLayout()
         metadataLayout.addWidget(metadata)
-        metadataLayout.addWidget(IconButton(image='assets/images/time_limit.png', width=9, height=9))
+        if 'due' in self._task.keys():
+            metadataLayout.addWidget(IconButton(image='assets/images/time_limit.png', width=9, height=9))
         metadataLayout.addStretch(1)
         newLayout.addLayout(metadataLayout, 0, 0, Qt.AlignmentFlag.AlignLeft)
         newLayout.addWidget(self.editableLabel, 1, 0)
@@ -54,14 +54,14 @@ class TaskWidget(QGridLayout):
         self.addWidget(IconButton('assets/images/delete.png', width=25, height=25), 0, 2)
 
     def _changePlanStatus(self):
-        if self._status == 'completed':
-            self._status = 'needsAction'
+        if self._task['status'] == 'completed':
+            self._task['status'] = 'needsAction'
         else:
-            self._status = 'completed'
-        if self._status:
+            self._task['status'] = 'completed'
+        if self._task['status']:
             self.editableLabel.updateStyleSheet({'text-decoration': 'line-through'})
         else:
             self.editableLabel.updateStyleSheet({'text-decoration': 'none'})
 
     def _changePlanTitle(self):
-        self._title = self.editableLabel.text()
+        self._task['title'] = self.editableLabel.text()
