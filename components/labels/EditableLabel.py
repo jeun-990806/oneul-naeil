@@ -7,6 +7,7 @@ class EditableLabel(QLineEdit):
         self.editingFinished.connect(self.handleEditingFinished)
         self._init = initEditable
         self._style = {
+            'font-size': '12px',
             'border': '1px solid black',
             'text-decoration': 'none'
         }

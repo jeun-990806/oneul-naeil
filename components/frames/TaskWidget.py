@@ -1,3 +1,4 @@
+import imp
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QLabel
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
@@ -5,12 +6,14 @@ from PyQt5.QtGui import QFont
 from components.checkboxes.ImageCheckbox import ImageCheckbox
 from components.labels.EditableLabel import EditableLabel
 from components.buttons.IconButton import IconButton
+from Controllers import DataController
 
 class TaskWidget(QGridLayout):
-    def __init__(self, title='untitled', status=False):
+    def __init__(self, taskJson):
         super().__init__()
-        self._title = title
-        self._status = status
+        self._title = taskJson['title']
+        self._status = taskJson['status']
+        self._tasklist = DataController().getTasklist(taskJson['id'])
         self._setStyle()
         self._setWidgets()
 
@@ -25,13 +28,13 @@ class TaskWidget(QGridLayout):
         self._checkbox.setFixedHeight(15)
         self._checkbox.toggled.connect(self._changePlanStatus)
 
-        metadata = QLabel('from Google Task, [To-Do] ')
+        metadata = QLabel('from Google Task, [' + self._tasklist['title'] + '] ')
         metadata.setStyleSheet('color: gray;')
         testfont = QFont('돋움', 7)
         metadata.setFont(testfont)
         
         self.editableLabel = EditableLabel(False)
-        if self._status is True:
+        if self._status is 'completed':
             self.editableLabel.updateStyleSheet({'text-decoration': 'line-through'})
         else:
             self.editableLabel.updateStyleSheet({'text-decoration': 'none'})
@@ -51,7 +54,10 @@ class TaskWidget(QGridLayout):
         self.addWidget(IconButton('assets/images/delete.png', width=25, height=25), 0, 2)
 
     def _changePlanStatus(self):
-        self._status = not self._status
+        if self._status == 'completed':
+            self._status = 'needsAction'
+        else:
+            self._status = 'completed'
         if self._status:
             self.editableLabel.updateStyleSheet({'text-decoration': 'line-through'})
         else:

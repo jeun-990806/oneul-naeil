@@ -1,8 +1,10 @@
 import os
+import json
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 
 SCOPES = [
     'https://www.googleapis.com/auth/tasks.readonly', 
@@ -49,14 +51,36 @@ class DataController:
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls)
             cls._targetTasklists = []
+            cls._targetComponents = []
         return cls._instance
 
-    def addTasklist(self, tasklistId):
-        self._targetTasklists.append(tasklistId)
+    def attach(self, component):
+        if component not in self._targetComponents:
+            self._targetComponents.append(component)
+
+    def update(self):
+        for component in self._targetComponents:
+            component.updateState()
+
+    def loadAllTask(self):
+        for tasklist in self._targetTasklists:
+            tasklist['items'] = self.loadTasklistItems(tasklist['id'])
+
+    def loadTasklistItems(self, tasklistId):
+        credentials = SyncController().getCredentials()
+        if credentials:
+            service = build('tasks', 'v1', credentials=credentials)
+            return service.tasks().list(tasklist=tasklistId).execute().get('items', [])
+
+    def addTasklist(self, tasklist):
+        if tasklist not in self._targetTasklists:
+            self._targetTasklists.append(tasklist)
     
-    def removeTasklist(self, tasklistId):
-        if tasklistId in self._targetTasklists:
-            self._targetTasklists.remove(tasklistId)
+    def removeTasklist(self, tasklist):
+        for tl in self._targetTasklists:
+            if tl['id'] == tasklist['id']:
+                self._targetTasklists.remove(tl)
+                break
 
     def saveSettingData(self, newData):
         settingData = {
@@ -66,26 +90,37 @@ class DataController:
         # To-Do: 딕셔너리 형식으로 새 설정값을 받아서 이를 config.ini 파일에 업데이트
         return
 
-    def saveUserData(self, newData):
-        # To-Do: 딕셔너리 형식으로 새 설정값을 받아서 이를 localData 파일에 업데이트
-        localData = {
-            'tasklists': [
-                {   
-                    'id': '태스크리스트 아이디',
-                    'title': '태스크리스트 제목',
-                    'last_update': '최근 동기화 날짜',
-                    'items': [
-                        {
-                            'id': '태스크 아이디',
-                            'title': '태스크 제목',
-                            'due': '설정 시간',
-                            'completed': '완료 여부'
-                        }
-                    ]
-                }
-            ]
-        }
-        return
+    def saveUserData(self):
+        userDataFilePath = 'localData.json'
+        with open(userDataFilePath, 'w') as file:
+            json.dump(self._targetTasklists, file)
+    
+    def loadUserData(self):
+        userDataFilePath = 'localData.json'
+        with open(userDataFilePath, 'r') as file:
+            self._targetTasklists = json.load(file)
+    
+    def checkSync(self, tasklistId):
+        if tasklistId in [tasklist['id'] for tasklist in self._targetTasklists]:
+            return True
+        return False
+    
+    def getTasklistItems(self, index):
+        return self._targetTasklists[index]['items']
+
+    def getAllTasklistItems(self):
+        result = []
+        for tasklist in self._targetTasklists:
+            result += tasklist['items']
+        return result
+
+    def getTasklist(self, taskId):
+        result = None
+        for tasklist in self._targetTasklists:
+            for task in tasklist['items']:
+                if task['id'] == taskId:
+                    result = tasklist
+        return result
 
     def printTasklist(self):
         print(self._targetTasklists)

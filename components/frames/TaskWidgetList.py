@@ -5,13 +5,16 @@ from PyQt5.QtGui import QFont
 from components.buttons.IconButton import IconButton
 from components.frames.TaskWidget import TaskWidget
 
+from Controllers import DataController
+
 class TaskWidgetList(QFrame):
-    def __init__(self, parent=None, controller=None, category=''):
-        super().__init__(parent)
+    def __init__(self, controller=None, category=''):
+        super().__init__()
         self.setFrameShape(QFrame.Box)
         self.setLineWidth(0)
 
         self._controller = controller
+        DataController().attach(self)
 
         categoryTitle = QHBoxLayout()
         
@@ -22,21 +25,21 @@ class TaskWidgetList(QFrame):
         categoryTitle.addWidget(self._addButton, alignment=Qt.AlignmentFlag.AlignRight)
 
         self._layout = QVBoxLayout(self)
-        self._layout.addLayout(categoryTitle)
         self._layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self._loadTasks()
 
-    def _loadTasks(self):
-        TaskDataList = [
-            {'title': 'test01', 'status': False},
-            {'title': 'test02', 'status': True}
-            ]
-        for TaskData in TaskDataList:
-            self.addTaskWidget(TaskData)
-    
-    def addTaskWidget(self, TaskData):
-        TaskWidget = self._createTaskWidget(TaskData)
-        self._layout.addLayout(TaskWidget)
+        self.updateState()
 
-    def _createTaskWidget(self, TaskData):
-        return TaskWidget(title=TaskData['title'], status=TaskData['status'])
+    def updateState(self):
+        self.deleteItemsOfLayout(self._layout)
+        for task in DataController().getAllTasklistItems():
+            self._layout.addLayout(TaskWidget(task))
+
+    def deleteItemsOfLayout(self, layout):
+     if layout is not None:
+         while layout.count():
+             item = layout.takeAt(0)
+             widget = item.widget()
+             if widget is not None:
+                 widget.setParent(None)
+             else:
+                 self.deleteItemsOfLayout(item.layout())

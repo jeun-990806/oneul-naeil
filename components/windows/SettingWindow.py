@@ -89,37 +89,39 @@ class SyncPannel(QGroupBox):
         layout.addWidget(syncButton)
         self.setLayout(layout)
 
-class Tasklist:
-    def __init__(self, tasklistId, title):
-        self._id = tasklistId
-        self._title = title
-
-    def getTitle(self):
-        return self._title
-    
-    def getId(self):
-        return self._id
-
 class TasklistCheckBox(QCheckBox):
     def __init__(self, tasklist):
-        super().__init__(tasklist.getTitle())
+        super().__init__(tasklist['title'])
         self._tasklist = tasklist
-        self.stateChanged.connect(self._toggle)
-    
-    def _getTasks(self):
-        credentials = SyncController().getCredentials()
-        service = build('tasks', 'v1', credentials=credentials)
-        return service.tasks().list(tasklist=self._tasklist.getId()).execute()
 
     def _toggle(self):
-        if self.isChecked(): DataController().addTasklist(self._tasklist.getId())
-        else: DataController().removeTasklist(self._tasklist.getId())
-        DataController().printTasklist()
+        if self.isChecked(): DataController().addTasklist(self._tasklist)
+        else: DataController().removeTasklist(self._tasklist)
+        self.parent().changeState()
+    
+    def showEvent(self, event) -> None:
+        if DataController().checkSync(self._tasklist['id']):
+            self.setChecked(True)
+        else:
+            self.setChecked(False)
+        self.stateChanged.connect(self._toggle)
+        super().showEvent(event)
 
 class TasklistPannel(QGroupBox):
+    class SettingSaveButton(QPushButton):
+        def __init__(self):
+            super().__init__('저장')
+        
+        def mousePressEvent(self, event):
+            DataController().loadAllTask()
+            DataController().saveUserData()
+            DataController().update()
+            self.setDisabled(True)
+
     def __init__(self):
         super().__init__('태스크리스트 관리')
         SyncController().addTargetComponents(self)
+        DataController().loadUserData()
         self._render()
     
     def _render(self):
@@ -129,13 +131,18 @@ class TasklistPannel(QGroupBox):
         if SyncController().checkAuthorization():
             for tasklist in self._getTasklists():
                 self._layout.addWidget(TasklistCheckBox(tasklist))
-        self._layout.addWidget(QPushButton('저장'))
+        self._saveButton = self.SettingSaveButton()
+        self._saveButton.setDisabled(True)
+        self._layout.addWidget(self._saveButton)
         self.setLayout(self._layout)
 
     def reRender(self):
         if SyncController().checkAuthorization():
             for tasklist in self._getTasklists():
                 self._layout.addWidget(TasklistCheckBox(tasklist))
+
+    def changeState(self):
+        self._saveButton.setDisabled(False)
     
     def setCredentials(self, credentials):
         self._credentials = credentials
@@ -144,10 +151,14 @@ class TasklistPannel(QGroupBox):
         result = []
         try:
             service = build('tasks', 'v1', credentials=self._credentials)
-            result = [Tasklist(tasklist['id'], tasklist['title']) for tasklist in service.tasklists().list().execute().get('items', [])]
+            result = [tasklist for tasklist in service.tasklists().list().execute().get('items', [])]
         except Exception as err:
             print(err)
         return result
+    
+    def hideEvent(self, event) -> None:
+        super().hideEvent(event)
+        DataController().loadUserData()
 
 class SettingFrame(QFrame):
     def __init__(self):
