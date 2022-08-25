@@ -7,7 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 SCOPES = [
-    'https://www.googleapis.com/auth/tasks.readonly', 
+    'https://www.googleapis.com/auth/tasks', 
     'https://www.googleapis.com/auth/userinfo.email', 
     'https://www.googleapis.com/auth/userinfo.profile',
     'openid'
@@ -121,6 +121,42 @@ class DataController:
                 if task['id'] == taskId:
                     result = tasklist
         return result
+
+    def updateTask(self, tasklistId, taskJson):
+        targetTasklist = None
+        targetTask = None
+        for tasklist in self._targetTasklists:
+            targetTasklist = tasklist
+            if tasklist['id'] == tasklistId:
+                for task in tasklist['items']:
+                    if task['id'] == taskJson['id']:
+                        targetTask = task
+                        break
+                break
+        targetTasklist['items'][targetTasklist['items'].indexOf(targetTask)] = taskJson
+        credentials = SyncController().getCredentials()
+        if credentials:
+            service = build('tasks', 'v1', credentials=credentials)
+            service.tasks().update(tasklist=tasklistId, task=taskJson['id'], body=taskJson).execute()
+        DataController().saveUserData()
+        
+    def deleteTask(self, tasklistId, taskJson):
+        targetTasklist = None
+        targetTask = None
+        for tasklist in self._targetTasklists:
+            if tasklist['id'] == tasklistId:
+                targetTasklist = tasklist
+                for task in tasklist['items']:
+                    if task['id'] == taskJson['id']:
+                        targetTask = task
+                        break
+                break
+        targetTasklist['items'].remove(targetTask)
+        credentials = SyncController().getCredentials()
+        if credentials:
+            service = build('tasks', 'v1', credentials=credentials)
+            service.tasks().delete(tasklist=tasklistId, task=taskJson['id']).execute()
+        DataController().saveUserData()
 
     def printTasklist(self):
         print(self._targetTasklists)
