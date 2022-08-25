@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QComboBox
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
@@ -6,8 +6,6 @@ from components.checkboxes.ImageCheckbox import ImageCheckbox
 from components.labels.EditableLabel import EditableLabel
 from components.buttons.IconButton import IconButton
 from Controllers import DataController
-
-import time
 
 class TaskWidget(QGridLayout):
     class TaskDeleteButton(IconButton):
@@ -17,6 +15,20 @@ class TaskWidget(QGridLayout):
         
         def mousePressEvent(self, event):
             self._target.delete()
+
+    class TasklistSelectButton(QComboBox):
+        def __init__(self, currentTasklist, target):
+            super().__init__()
+            self._target = target
+            self._tasklists = [(tasklist['title'], tasklist['id']) for tasklist in DataController().getTargetTasklists()]
+            self.setStyleSheet('color: gray; border: none; background-color: white; padding: 1px;')
+            self.setFont(QFont('돋움', 7))
+            self.addItems([tasklist[0] for tasklist in self._tasklists])
+            self.setCurrentText(currentTasklist)
+
+        def getCurrentTasklist(self):
+            return self._tasklists[self.currentIndex()]
+
 
     def __init__(self, taskJson):
         super().__init__()
@@ -36,10 +48,15 @@ class TaskWidget(QGridLayout):
         self._checkbox.setFixedHeight(15)
         self._checkbox.toggled.connect(self._changePlanStatus)
 
-        metadata = QLabel('from Google Task, [' + self._tasklist['title'] + '] ')
+        metadata = QLabel('from Google Task, [')
         metadata.setStyleSheet('color: gray;')
-        testfont = QFont('돋움', 7)
-        metadata.setFont(testfont)
+        metadata.setFont(QFont('돋움', 7))
+        metadata_r = QLabel('] ')
+        metadata_r.setStyleSheet('color: gray;')
+        metadata_r.setFont(QFont('돋움', 7))
+
+        self._tasklistLabel = self.TasklistSelectButton(self._tasklist['title'], self)
+        self._tasklistLabel.currentIndexChanged.connect(self._changeTasklist)
         
         self.editableLabel = EditableLabel(False)
         if self._task['status'] is 'completed':
@@ -52,6 +69,8 @@ class TaskWidget(QGridLayout):
         newLayout = QGridLayout()
         metadataLayout = QHBoxLayout()
         metadataLayout.addWidget(metadata)
+        metadataLayout.addWidget(self._tasklistLabel)
+        metadataLayout.addWidget(metadata_r)
         if 'due' in self._task.keys():
             metadataLayout.addWidget(IconButton(image='assets/images/time_limit.png', width=9, height=9))
         metadataLayout.addStretch(1)
@@ -91,3 +110,10 @@ class TaskWidget(QGridLayout):
                     widget.setParent(None)
                 else:
                     self.deleteItemsOfLayout(item.layout())
+
+    def _changeTasklist(self):
+        for tasklist in DataController().getTargetTasklists():
+            if tasklist == self._tasklistLabel.getCurrentTasklist()[1]:
+                self._tasklist = tasklist
+                break
+        DataController().moveTask(self._tasklist['id'], self._tasklistLabel.getCurrentTasklist()[1], self._task)

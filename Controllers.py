@@ -54,6 +54,9 @@ class DataController:
             cls._targetComponents = []
         return cls._instance
 
+    def getTargetTasklists(self):
+        return self._targetTasklists
+
     def attach(self, component):
         if component not in self._targetComponents:
             self._targetComponents.append(component)
@@ -133,7 +136,7 @@ class DataController:
                         targetTask = task
                         break
                 break
-        targetTasklist['items'][targetTasklist['items'].indexOf(targetTask)] = taskJson
+        targetTasklist['items'][targetTasklist['items'].index(targetTask)] = taskJson
         credentials = SyncController().getCredentials()
         if credentials:
             service = build('tasks', 'v1', credentials=credentials)
@@ -157,6 +160,26 @@ class DataController:
             service = build('tasks', 'v1', credentials=credentials)
             service.tasks().delete(tasklist=tasklistId, task=taskJson['id']).execute()
         DataController().saveUserData()
+
+    def addTask(self, tasklistId, taskJson=None):
+        if taskJson is None:
+            taskJson = {
+                "title": "Untitled",
+                "status": "needsAction",
+                }
+        credentials = SyncController().getCredentials()
+        if credentials:
+            service = build('tasks', 'v1', credentials=credentials)
+            result = service.tasks().insert(tasklist=tasklistId, body=taskJson).execute()
+            for tasklist in self._targetTasklists:
+                if tasklist['id'] == tasklistId:
+                    tasklist['items'].append(result)
+            self.update()
+            self.saveUserData()
+    
+    def moveTask(self, originTasklistId, destTasklistId, taskJson):
+        self.deleteTask(originTasklistId, taskJson)
+        self.addTask(destTasklistId, taskJson=taskJson)
 
     def printTasklist(self):
         print(self._targetTasklists)

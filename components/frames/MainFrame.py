@@ -25,9 +25,6 @@ class MainFrame(QFrame):
         self.resize(500, 500)
         self.show()
 
-    def mousePressEvent(self, event):
-        self.setFocus()
-
     def x(self):
         return self.parent().x()
 
