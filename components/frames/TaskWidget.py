@@ -29,7 +29,6 @@ class TaskWidget(QGridLayout):
         def getCurrentTasklist(self):
             return self._tasklists[self.currentIndex()]
 
-
     def __init__(self, taskJson):
         super().__init__()
         self._task = taskJson
@@ -72,7 +71,9 @@ class TaskWidget(QGridLayout):
         metadataLayout.addWidget(self._tasklistLabel)
         metadataLayout.addWidget(metadata_r)
         if 'due' in self._task.keys():
-            metadataLayout.addWidget(IconButton(image='assets/images/time_limit.png', width=9, height=9))
+            dueIcon = IconButton(image='assets/images/time_limit.png', width=9, height=9)
+            dueIcon.setToolTip(self._task['due'].split('T')[0])
+            metadataLayout.addWidget(dueIcon)
         metadataLayout.addStretch(1)
         newLayout.addLayout(metadataLayout, 0, 0, Qt.AlignmentFlag.AlignLeft)
         newLayout.addWidget(self.editableLabel, 1, 0)
