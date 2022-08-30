@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QFrame, QVBoxLayout
 
 from components.frames.TopMenuBar import TopMenuBar
 from components.frames.BottomMenuBar import BottomMenuBar
@@ -12,11 +12,13 @@ class MainFrame(QFrame):
     def initUI(self):
         self.topMenuBar = TopMenuBar()
         self.bottomMenuBar = BottomMenuBar()
-        self.taskWidgetList = TaskWidgetList()
+        self.taskWidgetList_A = TaskWidgetList('~7일', 'dueDate')
+        self.taskWidgetList_B = TaskWidgetList('자율', 'noDueDate')
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.topMenuBar)
-        layout.addWidget(self.taskWidgetList)
+        layout.addWidget(self.taskWidgetList_A)
+        layout.addWidget(self.taskWidgetList_B)
         layout.addWidget(self.bottomMenuBar)
 
         self.topMenuBar.setTargetFrame(self)

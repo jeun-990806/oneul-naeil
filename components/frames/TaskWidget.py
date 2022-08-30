@@ -58,7 +58,7 @@ class TaskWidget(QGridLayout):
         self._tasklistLabel.currentIndexChanged.connect(self._changeTasklist)
         
         self.editableLabel = EditableLabel(False)
-        if self._task['status'] is 'completed':
+        if self._task['status'] == 'completed':
             self.editableLabel.updateStyleSheet({'text-decoration': 'line-through'})
         else:
             self.editableLabel.updateStyleSheet({'text-decoration': 'none'})

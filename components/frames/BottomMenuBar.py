@@ -8,7 +8,8 @@ class BottomMenuBar(QFrame):
         super().__init__()
         self.setFrameShape(QFrame.Box)
         self.setLineWidth(1)
-        self.setStyleSheet('border-top: 1px dashed #C6C6C6;')
+        self.setObjectName('bottomMenuBar')
+        self.setStyleSheet('#bottomMenuBar { border-top: 1px dashed gray; }')
 
         self.setFixedHeight(height)
         self._setWidgets()
